@@ -9,48 +9,79 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.apache.activemq.ActiveMQConnectionFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 
+@RestController
+@EnableAutoConfiguration
+@EnableJms
 /**
-* Hello world!
-*/
+ * Clase que produce una entrada en la cola JBoss EAP AMQ
+ * @author pedro.alonso.garcia
+ *
+ */
 
 
-public class consumer {
+public class consumer implements ExceptionListener {
+	//Variables Globales
+	Connection conn = null;
+	String consola = "Hello World! by PA --- <BR> MicroservicioA";
+	
+	@JmsListener(destination = "TEST.HELLOW")
+	public void receiveQueue(String text) {
+		consola += "<BR>==> RECIBIENDO: " + text;
+		System.out.println(text);
+	}
+	
+	@RequestMapping("/")
+	String home() {
+		
+		try {
+			if (conn == null){
+				conn = ConsumerConnection.getConnection();
+				consola += "<BR>==> CONEXION ESTABLECIDA: " + conn.toString();
+			}
+			else{
+				getMessage2Q();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		return consola;
+	}
 
 	    public static void main(String[] args) throws Exception {
-	        thread(new HelloWorldConsumer(), false);
+	        SpringApplication.run(consumer.class, args);
 	        
 	    }
 	 
-	    public static void thread(Runnable runnable, boolean daemon) {
-	        Thread brokerThread = new Thread(runnable);
-	        brokerThread.setDaemon(daemon);
-	        brokerThread.start();
-	    }
+//	    public static void thread(Runnable runnable, boolean daemon) {
+//	        Thread brokerThread = new Thread(runnable);
+//	        brokerThread.setDaemon(daemon);
+//	        brokerThread.start();
+//	    }
 	 
-	    
+	    private void getMessage2Q() {
 	 
-	    public static class HelloWorldConsumer implements Runnable, ExceptionListener {
-	        public void run() {
+	   
 	            try {
 	 
-	                // Create a ConnectionFactory
-	                ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://localhost");
-	 
-	                // Create a Connection
-	                Connection connection = connectionFactory.createConnection();
-	                connection.start();
-	 
-	                connection.setExceptionListener(this);
+	            	conn.setExceptionListener(this);
 	 
 	                // Create a Session
-	                Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+	                Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 	 
-	                // Create the destination (Topic or Queue)
-	                Destination destination = session.createQueue("TEST.FOO");
-	 
+	                // Point to destination (Topic or Queue)
+	                Destination destination = session.createQueue("TEST.HELLOW");
+	                
 	                // Create a MessageConsumer from the Session to the Topic or Queue
 	                MessageConsumer consumer = session.createConsumer(destination);
 	 
@@ -65,9 +96,7 @@ public class consumer {
 	                    System.out.println("Received: " + message);
 	                }
 	 
-	                consumer.close();
-	                session.close();
-	                connection.close();
+//	               
 	            } catch (Exception e) {
 	                System.out.println("Caught: " + e);
 	                e.printStackTrace();
@@ -77,8 +106,5 @@ public class consumer {
 	        public synchronized void onException(JMSException ex) {
 	            System.out.println("JMS Exception occured.  Shutting down client.");
 	        }
-	    }
+	}
 	
-	
-	
-}
