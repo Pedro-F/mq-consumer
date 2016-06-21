@@ -14,10 +14,10 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 		try {
             
         	// Create a ConnectionFactory
-            ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://172.30.190.28:61616");
+            ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://172.30.78.89:61616");
 
             // Create a Connection
-            connection = connectionFactory.createConnection();
+            connection = connectionFactory.createConnection("user","password");
             connection.start();
             
             

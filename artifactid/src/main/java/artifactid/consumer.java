@@ -30,9 +30,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class consumer implements ExceptionListener {
 	//Variables Globales
 	Connection conn = null;
+	Session session = null;
+	MessageConsumer consumidor = null;
+	
 	String consola = "Hello World! by PA --- <BR> MicroservicioA";
 	
-	@JmsListener(destination = "TEST.HELLOW")
+	@JmsListener(destination = "TEST.MECCANO")
 	public void receiveQueue(String text) {
 		consola += "<BR>==> RECIBIENDO: " + text;
 		System.out.println(text);
@@ -43,11 +46,7 @@ public class consumer implements ExceptionListener {
 		
 		try {
 			if (conn == null){
-				conn = ConsumerConnection.getConnection();
-				consola += "<BR>==> CONEXION ESTABLECIDA: " + conn.toString();
-			}
-			else{
-				getMessage2Q();
+				init();
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -55,56 +54,39 @@ public class consumer implements ExceptionListener {
 		}
 		
 		
-		return consola;
+		return "<strong>Consumer</strong> <br>Recibiendo mensajes</br>";
 	}
 
-	    public static void main(String[] args) throws Exception {
-	        SpringApplication.run(consumer.class, args);
-	        
-	    }
-	 
-//	    public static void thread(Runnable runnable, boolean daemon) {
-//	        Thread brokerThread = new Thread(runnable);
-//	        brokerThread.setDaemon(daemon);
-//	        brokerThread.start();
-//	    }
-	 
-	    private void getMessage2Q() {
-	 
-	   
-	            try {
-	 
-	            	conn.setExceptionListener(this);
-	 
-	                // Create a Session
-	                Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-	 
-	                // Point to destination (Topic or Queue)
-	                Destination destination = session.createQueue("TEST.HELLOW");
-	                
-	                // Create a MessageConsumer from the Session to the Topic or Queue
-	                MessageConsumer consumer = session.createConsumer(destination);
-	 
-	                // Wait for a message
-	                Message message = consumer.receive(1000);
-	 
-	                if (message instanceof TextMessage) {
-	                    TextMessage textMessage = (TextMessage) message;
-	                    String text = textMessage.getText();
-	                    System.out.println("Received: " + text);
-	                } else {
-	                    System.out.println("Received: " + message);
-	                }
-	 
-//	               
-	            } catch (Exception e) {
-	                System.out.println("Caught: " + e);
-	                e.printStackTrace();
-	            }
-	        }
-	 
-	        public synchronized void onException(JMSException ex) {
-	            System.out.println("JMS Exception occured.  Shutting down client.");
-	        }
+	private void init() {
+		// TODO Auto-generated method stub
+		
+		conn = ConsumerConnection.getConnection();
+		consola += "<BR>==> CONEXION ESTABLECIDA: " + conn.toString();
+		
+		try{
+			// Create a Session
+			session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create the destination (Topic or Queue)
+            Destination destination = session.createQueue("TEST.MECCANO");
+
+            // Create a MessageProducer from the Session to the Topic or Queue
+            consumidor = session.createConsumer(destination);
+            
+		
+		 }
+	    catch (Exception e) {
+	        System.out.println("Init Caught: " + e);
+	        e.printStackTrace();
+ 	    }
 	}
+    public static void main(String[] args) throws Exception {
+        SpringApplication.run(consumer.class, args);
+        
+    }
+ 
+    public synchronized void onException(JMSException ex) {
+        System.out.println("JMS Exception occured.  Shutting down client.");
+    }
+}
 	
